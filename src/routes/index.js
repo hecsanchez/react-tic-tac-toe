@@ -2,10 +2,10 @@ import React from 'react';
 import { BrowserRouter, Route, Switch } from 'react-router-dom';
 
 // Controls
-import NotFound from './components/controls/NotFound/NotFound';
+import NotFound from 'components/controls/NotFound/NotFound';
 
 // Pages
-import Home from './components/pages/Home';
+import Home from 'components/pages/Home';
 
 export default () => (
   <BrowserRouter>

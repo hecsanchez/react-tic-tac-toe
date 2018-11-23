@@ -1,5 +1,6 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import React      from 'react';
+import PropTypes  from 'prop-types';
+
 import { tableConfig, humanPlayer, aiPlayer, winCombos } from '../../../lib/config';
 import './_home.scss';
 
@@ -10,15 +11,17 @@ class Home extends React.Component {
     this.state = {
       moves: Array.from(Array(9).keys()),
       gameStarted: false,
-      winner: '',
-    }
+      result: '',
+      gameWon: {},
+      cellColor: '#fff',
+    };
 
     this.startGame = this.startGame.bind(this);
-    this.turnClick = this.turnClick.bind(this);
-    this.turn = this.turn.bind(this);
+    this.handleCellClick = this.handleCellClick.bind(this);
+    this.playTurn = this.playTurn.bind(this);
     this.checkWin = this.checkWin.bind(this);
     this.gameOver = this.gameOver.bind(this);
-    this.declareWinner = this.declareWinner.bind(this);
+    this.showResult = this.showResult.bind(this);
     this.emptySquares = this.emptySquares.bind(this);
     this.minimax = this.minimax.bind(this);
   }
@@ -27,40 +30,34 @@ class Home extends React.Component {
     this.startGame();
   }
 
-  startGame() {  
+  startGame() {
     const cells = document.getElementsByClassName('cell');
 
-    this.setState({ 
+    this.setState({
       gameStarted: true,
+      gameWon: {},
       moves: Array.from(Array(9).keys())
     });
+  }
 
-    for (var i=0; i< cells.length; i++) {
-      cells[i].innerText = '';
-      cells[i].style.removeProperty('background-color');
+  handleCellClick(placeId) {
+    if (typeof this.state.moves[placeId] === 'number') {
+      this.playTurn(placeId, humanPlayer);
+      if (!this.checkTie()) this.playTurn(this.idealMove(), aiPlayer);
     }
   }
 
-  turnClick(placeId) {
-    if (this.state.gameStarted) {
-      if (typeof this.state.moves[placeId] === 'number') {
-        this.turn(placeId, humanPlayer)
-        if (!this.checkTie()) this.turn(this.bestSpot(), aiPlayer);
-      }
-    }
-  }
-
-  turn(squareId, player) {
+  playTurn(squareId, player) {
     const { moves } = this.state;
     moves[squareId] = player;
     this.setState({ moves });
-    document.getElementById(squareId).innerText = player;
     const gameWon = this.checkWin(this.state.moves, player);
-    if (gameWon) this.gameOver(gameWon);
+    if (gameWon) {
+      this.gameOver(gameWon);
+    }
   }
 
   checkWin(board, player) {
-
     let plays = board.reduce((a, e, i) => (e === player) ? a.concat(i) : a, []);
     let gameWon = null;
     for (let [index, win] of winCombos.entries()) {
@@ -70,23 +67,19 @@ class Home extends React.Component {
       } 
     }
     return gameWon;
-
   }
 
   gameOver(gameWon) {
-    for (let index of winCombos[gameWon.index]) {
-      document.getElementById(index).style.backgroundColor = 
-      gameWon.player === humanPlayer ? "#4da6ff" : "#ff0000";
-    }
+    const cellColor = gameWon.player === humanPlayer ? '#4da6ff' : '#ff0000';
+    this.setState({gameWon, cellColor})
 
-    setTimeout(this.declareWinner(gameWon.player === humanPlayer ? "You won! 👏" : "You lost🙁 "), 10000)
+    this.showResult(gameWon.player === humanPlayer ? 'You won! 👏' : 'You lost🙁')
+  }
 
-  } 
-
-  declareWinner(winner) {
+  showResult(result) {
     this.setState({
       gameStarted: false,
-      winner,
+      result,
     });
   }
 
@@ -94,18 +87,16 @@ class Home extends React.Component {
     return this.state.moves.filter(s => typeof s === 'number');
   }
 
-  bestSpot() {
+  idealMove() {
     return this.minimax(this.state.moves, aiPlayer).index;
   }
 
   checkTie() {
-    if (this.emptySquares().length === 0) { 
-      const cells = document.getElementsByClassName('cell');
+    if (this.emptySquares().length === 0) {
+      const cellColor = '#ffde66';
+      this.setState({ cellColor })
+      this.showResult("It's a tie! 😯")
 
-      for (let i = 0; i < cells.length; i++) { 
-        cells[i].style.backgroundColor = "#66ff66";
-      }
-      this.declareWinner("It's a tie! 😯")
       return true;
     }
     return false;
@@ -114,7 +105,7 @@ class Home extends React.Component {
   minimax(newBoard, player) {
     const availSpots = this.emptySquares(newBoard);
 
-    if (this.checkWin(newBoard, player)) { 
+    if (this.checkWin(newBoard, player)) {
       return { score: -10 };
     } else if (this.checkWin(newBoard, aiPlayer)) {
       return { score: 10 };
@@ -129,10 +120,10 @@ class Home extends React.Component {
       newBoard[availSpots[i]] = player;
 
       if (player === aiPlayer) {
-        let result = this.minimax(newBoard, humanPlayer);
+        const result = this.minimax(newBoard, humanPlayer);
         move.score = result.score;
       } else {
-        let result = this.minimax(newBoard, aiPlayer);
+        const result = this.minimax(newBoard, aiPlayer);
         move.score = result.score;
       }
 
@@ -142,17 +133,17 @@ class Home extends React.Component {
     }
 
     let bestMove;
-    if(player === aiPlayer) {
+    if (player === aiPlayer) {
       let bestScore = -10000;
       for (let i = 0; i < moves.length; i++) {
         if (moves[i].score > bestScore) {
           bestScore = moves[i].score;
-          bestMove = i; 
+          bestMove = i;
         }
       }
-    } else { // when human Player
+    } else {
       let bestScore = 10000;
-      for(var i = 0; i < moves.length; i++) {
+      for (let i = 0; i < moves.length; i++) {
         if (moves[i].score < bestScore) {
           bestScore = moves[i].score;
           bestMove = i;
@@ -164,8 +155,11 @@ class Home extends React.Component {
   }
 
   render() {
+    const { cellColor, gameWon } = this.state;
     const rows = Array.from(Array(tableConfig.rows).keys());
     const columns = Array.from(Array(tableConfig.columns).keys());
+    const winningCombo = winCombos[gameWon.index];
+    
     let placeId = 0;
 
     return (
@@ -174,18 +168,21 @@ class Home extends React.Component {
           <tbody>
             { 
               rows.map((row, index) => (
-                <tr key={ index + 1 }>
+                <tr key={index + 1}>
                   {
-                    columns.map((column) => {
+                    columns.map(() => {
                       const id = placeId;
                       placeId += 1;
-
+                      const value = parseInt(this.state.moves[id]) > -1 ? '' : this.state.moves[id];
                       return (
-                        <td 
+                        <td
                           className="cell"
                           id={id}
                           key={id}
-                          onClick={() => this.turnClick(id)}>
+                          onClick={() => this.handleCellClick(id)}
+                          style={ winningCombo && winningCombo.includes(id) ? {backgroundColor: cellColor} : {backgroundColor: '#fff'}}
+                        >
+                          { value }
                         </td>
                       )}
                     )
@@ -197,8 +194,8 @@ class Home extends React.Component {
         </table>
         { !this.state.gameStarted &&
           <div className="result">
-            <div className="text">{ this.state.winner }</div>
-            <button onClick={ this.startGame }>Try again</button>
+            <div className="text">{ this.state.result }</div>
+            <button onClick={this.startGame}>Try again</button>
           </div>
         }
         </div>
