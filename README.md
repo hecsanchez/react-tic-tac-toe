@@ -1,17 +1,14 @@
 # react-tic-tac-toe
 Demo: http://markdown-notes.s3-website-us-west-2.amazonaws.com/
 
-Install
+To Install dependencies  
 `npm install`
 
-Run
+To run the project 
 `npm start`
 
-Build
-`npm run build`
-
-Test
+To run the Unit tests 
 `npm run test`
 
-Coverage
+To see the Unit Test Coverage 
 `npm run coverage`
