@@ -1,5 +1,5 @@
 # react-tic-tac-toe
-Demo: http://markdown-notes.s3-website-us-west-2.amazonaws.com/
+Demo: http://tic-tac-toe-react.s3-website-us-west-2.amazonaws.com/
 
 To Install dependencies  
 `npm install`
